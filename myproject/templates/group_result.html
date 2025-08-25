@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Group Result</title>
+</head>
+<body>
+    <h2>Group Created</h2>
+    <p>Group name: {{ group.name }}</p>
+    {% if created %}
+        <p>Status: Group was created!</p>
+    {% else %}
+        <p>Status: Group already existed.</p>
+    {% endif %}
+    <a href="/create-group/">Create another group</a>
+</body>
+</html>
