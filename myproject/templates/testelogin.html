@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Teste Login API</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 400px; margin: auto; }
+        .result { margin-top: 20px; padding: 10px; border-radius: 5px; background: #f4f4f4; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Login API</h2>
+        <form id="loginForm">
+                {% csrf_token %}
+
+            <label for="username">Usuário:</label><br>
+            <input type="text" id="username" name="username" required><br><br>
+            <label for="password">Senha:</label><br>
+            <input type="password" id="password" name="password" required><br><br>
+            <button type="submit">Entrar</button>
+        </form>
+    <button id="csrfBtn" style="margin-top:15px;">Gerar CSRF Token</button>
+    <div id="csrfResult" class="result"></div>
+        <div id="result" class="result"></div>
+    </div>
+    <script>
+        // Função para pegar o token CSRF do cookie
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+    document.getElementById('loginForm').addEventListener('submit', async function(e) {
+        // Botão para gerar CSRF token
+        document.getElementById('csrfBtn').addEventListener('click', async function() {
+            const csrfDiv = document.getElementById('csrfResult');
+            csrfDiv.innerHTML = 'Gerando token...';
+            try {
+                const response = await fetch('/testelogin/', {
+                    method: 'GET'
+                });
+                const data = await response.json();
+                if (data.csrf) {
+                    csrfDiv.innerHTML = `<div class='success'>CSRF Token gerado:<br><b>${data.csrf}</b><br>SessionID: <b>${data.sessionid}</b></div>`;
+                } else {
+                    csrfDiv.innerHTML = `<div class='error'>Não foi possível gerar o token.</div>`;
+                }
+            } catch (err) {
+                csrfDiv.innerHTML = `<div class='error'>Erro ao gerar token.</div>`;
+            }
+        });
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Aguarde...';
+            const csrftoken = getCookie('csrftoken');
+            try {
+                const response = await fetch('/testelogin/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrftoken
+                    },
+                    body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+                });
+                const data = await response.json();
+                console.log('Resposta do login:', data);
+                if (data.success) {
+                    resultDiv.innerHTML = `<div class='success'>Login realizado!<br>Token: <b>${data.token}</b><br>Usuário: ${data.username}<br>Email: ${data.email}<br>CSRF: ${data.csrf}<br>SessionID: <b>${data.sessionid}</b></div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class='error'>${data.error || 'Erro desconhecido.'}<br>CSRF: ${data.csrf || ''}<br>SessionID: <b>${data.sessionid || ''}</b></div>`;
+                }
+            } catch (err) {
+                resultDiv.innerHTML = `<div class='error'>Erro na requisição.</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

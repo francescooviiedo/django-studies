@@ -1,3 +1,36 @@
+# Endpoint GET para retornar apenas o CSRF token e sessionid
+from django.views.decorators.http import require_GET
+@require_GET
+def api_csrf_token(request):
+    from django.middleware.csrf import get_token
+    csrf_token = get_token(request)
+    session_id = request.session.session_key
+    if not session_id:
+        request.session.create()
+        session_id = request.session.session_key
+    return JsonResponse({'csrf': csrf_token, 'sessionid': session_id})
+from django.views.decorators.http import require_POST
+
+# Endpoint RESTful para login
+@require_POST
+def api_login(request):
+    from django.middleware.csrf import get_token
+    username = request.POST.get('username')
+    password = request.POST.get('password')
+    user = authenticate(request, username=username, password=password)
+    csrf_token = get_token(request)
+    session_id = request.session.session_key
+    if not session_id:
+        request.session.create()
+        session_id = request.session.session_key
+    if user is not None:
+        return JsonResponse({
+            'success': True,
+            'csrf': csrf_token,
+            'sessionid': session_id,
+        })
+    else:
+        return JsonResponse({'success': False, 'error': 'Credenciais inválidas', 'csrf': csrf_token, 'sessionid': session_id}, status=401)
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.http import JsonResponse
@@ -55,3 +88,41 @@ def login_view(request):
     else:
         form = LoginForm()
     return render(request, 'login.html', {'form': form})
+
+import uuid
+
+from django.views.decorators.csrf import csrf_exempt
+
+def testelogin(request):
+    from django.middleware.csrf import get_token
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        csrf_token = get_token(request)
+        session_id = request.session.session_key
+        if not session_id:
+            request.session.create()
+            session_id = request.session.session_key
+        if user is not None:
+            token = str(uuid.uuid4())
+            return JsonResponse({
+                'success': True,
+                'username': user.username,
+                'token': token,
+                'email': user.email,
+                'csrf': csrf_token,
+                'sessionid': session_id,
+            })
+        else:
+            return JsonResponse({'success': False, 'error': 'Credenciais inválidas', 'csrf': csrf_token, 'sessionid': session_id}, status=401)
+    csrf_token = get_token(request)
+    session_id = request.session.session_key
+    if not session_id:
+        request.session.create()
+        session_id = request.session.session_key
+    return JsonResponse({'error': 'Método não permitido', 'csrf': csrf_token, 'sessionid': session_id}, status=405)
+
+# View para renderizar a tela de teste do login
+def testelogin_screen(request):
+    return render(request, 'testelogin.html')
