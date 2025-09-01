@@ -10,6 +10,7 @@ def api_csrf_token(request):
         session_id = request.session.session_key
     return JsonResponse({'csrf': csrf_token, 'sessionid': session_id})
 from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
 
 # Endpoint RESTful para login
 @require_POST
@@ -24,6 +25,11 @@ def api_login(request):
         request.session.create()
         session_id = request.session.session_key
     if user is not None:
+        from django.contrib.auth import login
+        request.session.flush()  # Clear session and create new session key
+        request.session.create() # Ensure a new session is created
+        login(request, user)     # Authenticate the user for this session
+        session_id = request.session.session_key
         return JsonResponse({
             'success': True,
             'csrf': csrf_token,
