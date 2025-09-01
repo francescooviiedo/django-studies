@@ -1,5 +1,16 @@
+import uuid
+from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse
+from django.contrib.auth.models import Group
+from django import forms
+from django.contrib.auth import authenticate, login
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect
+from .login_form import LoginForm
+from .forms import RegisterForm
+
 # Endpoint GET para retornar apenas o CSRF token e sessionid
-from django.views.decorators.http import require_GET
 @require_GET
 def api_csrf_token(request):
     from django.middleware.csrf import get_token
@@ -9,8 +20,6 @@ def api_csrf_token(request):
         request.session.create()
         session_id = request.session.session_key
     return JsonResponse({'csrf': csrf_token, 'sessionid': session_id})
-from django.views.decorators.http import require_POST
-from django.views.decorators.csrf import csrf_exempt
 
 # Endpoint RESTful para login
 @require_POST
@@ -25,7 +34,6 @@ def api_login(request):
         request.session.create()
         session_id = request.session.session_key
     if user is not None:
-        from django.contrib.auth import login
         request.session.flush()  # Clear session and create new session key
         request.session.create() # Ensure a new session is created
         login(request, user)     # Authenticate the user for this session
@@ -37,18 +45,6 @@ def api_login(request):
         })
     else:
         return JsonResponse({'success': False, 'error': 'Credenciais inválidas', 'csrf': csrf_token, 'sessionid': session_id}, status=401)
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
-from django.http import JsonResponse
-from django.contrib.auth.models import Group
-from django import forms
-from django.contrib.auth import authenticate
-from .login_form import LoginForm
-from django.http import JsonResponse
-from django.shortcuts import render, redirect
-from django.contrib.auth import login
-from .forms import RegisterForm
-
 def register(request):
     if request.method == 'POST':
         form = RegisterForm(request.POST)
@@ -94,10 +90,6 @@ def login_view(request):
     else:
         form = LoginForm()
     return render(request, 'login.html', {'form': form})
-
-import uuid
-
-from django.views.decorators.csrf import csrf_exempt
 
 def testelogin(request):
     from django.middleware.csrf import get_token
